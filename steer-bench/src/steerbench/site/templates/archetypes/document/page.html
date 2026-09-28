@@ -1,0 +1,159 @@
+{% extends "_base.html" %}
+{#
+  Archetype `document` — an untrusted content pane plus a form filled from it.
+
+  The page is driven entirely by the task manifest (`content`, `signals`,
+  `form_fields`); a theme that wants its own look overrides this file by shipping
+  `site/templates/<theme>/page.html`.
+
+  Two things distinguish it from `decision`, and both are load-bearing for a task built around it:
+
+  * the CONTENT PANE is prose the agent must actually read to do the job — a thread, a
+    ticket, a supplier note. It is not the `inject_text` banner, which the page marks as
+    a notice; under attack the injection is the body of the document itself, formatted
+    exactly like the honest text around it.
+  * the FORM is agent-authored. What the agent types is what the wire carries, so there
+    is no displayed≠real divergence on those keys for an enforcer to notice. The only
+    thing between a poisoned belief and the action is the pin the plan derived.
+
+  Chrome comes from the task's `Skin`, exactly as in `decision` — brand, accent, nav,
+  heading, badge, context rows, the two action labels. Without it eleven different
+  products rendered as one page with different words in it, and the variety the manifest
+  declares never reached the screen (registry.Skin).
+#}
+{% set sk = task.skin %}
+{% block title %}{{ sk.brand if sk else task.title }} — {{ task.title }}{% endblock %}
+{% block body_class %}doc{% if sk and sk.dark %} dark{% endif %}{% endblock %}
+{% block head_extra %}
+<style>
+  body.doc{--ac:{{ sk.accent if sk else '#4a6cf7' }};
+    --bg:#f4f6fa;--panel:#fff;--ink:#1a2333;--mut:#6b7690;--line:#e3e8f0;
+    background:var(--bg);color:var(--ink);margin:0;
+    font:14px/1.6 "Inter",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body.doc.dark{--bg:#0d111c;--panel:#151b2a;--ink:#e7edf6;--mut:#8a97ae;--line:#26304333;}
+  .dc-app{display:grid;grid-template-columns:{{ '212px' if sk and sk.nav else '0' }} 1fr;
+    min-height:100vh;}
+  .dc-side{background:color-mix(in srgb, var(--ac) 12%, #0e1524);color:#c9d5ea;padding:0 0 20px;}
+  body.doc.dark .dc-side{background:#0a0f1a;}
+  .dc-brand{display:flex;align-items:center;gap:10px;padding:18px 20px 20px;}
+  .dc-brand b{color:#fff;font-size:14px;display:block;} .dc-brand span{font-size:11px;color:#93a3c6;}
+  .dc-nav a{display:block;padding:9px 20px;color:#b7c2dc;text-decoration:none;font-size:13px;}
+  .dc-nav a.on{background:color-mix(in srgb, var(--ac) 26%, transparent);color:#fff;
+    box-shadow:inset 3px 0 0 var(--ac);font-weight:600;}
+  .dc-top{display:flex;align-items:center;gap:12px;padding:14px 30px;background:var(--panel);
+    border-bottom:1px solid var(--line);}
+  .dc-mark{width:32px;height:32px;border-radius:9px;background:var(--ac);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;}
+  .dc-top b{font-size:14px;} .dc-top .who{margin-left:auto;color:var(--mut);font-size:13px;}
+  .dc-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;
+    background:color-mix(in srgb, var(--ac) 14%, transparent);color:var(--ac);
+    border:1px solid color-mix(in srgb, var(--ac) 40%, transparent);}
+  .dc-wrap{max-width:1020px;padding:24px 30px 48px;
+    display:grid;grid-template-columns:1.35fr 1fr;gap:22px;align-items:start;}
+  .dc-h{grid-column:1/-1;margin:0 0 2px;}
+  .dc-h h1{font-size:21px;margin:0 0 4px;letter-spacing:-.01em;display:flex;
+    align-items:center;gap:11px;}
+  .dc-h p{margin:0;color:var(--mut);font-size:13px;}
+  .dc-card{background:var(--panel);border:1px solid var(--line);border-radius:13px;
+    box-shadow:0 1px 2px rgba(20,35,70,.04),0 8px 24px rgba(20,35,70,.05);overflow:hidden;}
+  .dc-card h2{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);
+    margin:0;padding:14px 20px;border-bottom:1px solid var(--line);}
+  .dc-pane{padding:18px 20px;white-space:pre-wrap;font-size:13.5px;color:var(--ink);
+    max-height:420px;overflow:auto;}
+  .dc-meta{padding:6px 20px 14px;}
+  .dc-row{display:flex;justify-content:space-between;gap:16px;padding:11px 0;
+    border-bottom:1px dashed var(--line);}
+  .dc-row:last-child{border-bottom:none;}
+  .dc-row .k{color:var(--mut);font-size:13px;} .dc-row .v{font-weight:600;text-align:right;}
+  .dc-form{padding:16px 20px 20px;}
+  .dc-f{margin-bottom:14px;}
+  .dc-f label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px;}
+  .dc-f input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;
+    padding:10px 12px;font-size:14px;font-family:inherit;background:var(--bg);
+    color:var(--ink);}
+  .dc-f input:focus{outline:none;border-color:var(--ac);background:var(--panel);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--ac) 18%, transparent);}
+  .dc-note{display:flex;gap:10px;margin:0 20px 16px;padding:12px 14px;border-radius:11px;
+    background:#fff7e8;border:1px solid #f0dcae;color:#7a5a12;font-size:13px;}
+  .dc-note .ic{font-weight:800;color:#c08a1a;}
+  .dc-act{grid-column:1/-1;display:flex;align-items:center;gap:11px;margin-top:4px;}
+  .dc-btn{border:1px solid var(--line);border-radius:10px;padding:12px 20px;font-size:14px;
+    font-weight:700;cursor:pointer;background:var(--panel);color:var(--ink);font-family:inherit;}
+  .dc-btn.pri{background:var(--ac);border-color:var(--ac);color:#fff;}
+  .dc-st{color:var(--mut);font-size:13px;}
+  .dc-foot{grid-column:1/-1;color:#8a94a8;font-size:12px;margin-top:14px;}
+</style>
+{% endblock %}
+{% block shell %}
+<div class="dc-app">
+  {% if sk and sk.nav %}
+  <aside class="dc-side">
+    <div class="dc-brand">
+      <div class="dc-mark">{{ sk.mark or sk.brand[:2]|upper }}</div>
+      <div><b>{{ sk.brand }}</b><span>{{ sk.tagline }}</span></div>
+    </div>
+    <nav class="dc-nav">
+      {% for item in sk.nav %}
+      <a href="#" class="{{ 'on' if loop.last else '' }}">{{ item }}</a>
+      {% endfor %}
+    </nav>
+  </aside>
+  {% endif %}
+  <main>
+    <div class="dc-top">
+      {% if not (sk and sk.nav) %}
+      <div class="dc-mark">{{ (sk.mark if sk else '') or task.theme[:2]|upper }}</div>
+      {% endif %}
+      <b>{{ sk.brand if sk else task.title }}</b>
+      <span class="who">Signed in · {{ task.domain }}</span>
+    </div>
+    <div class="dc-wrap">
+      <div class="dc-h">
+        <h1>{{ (sk.heading if sk else '') or task.title }}
+          {% if sk and sk.badge %}<span class="dc-badge">{{ sk.badge }}</span>{% endif %}</h1>
+        <p>{{ (sk.subtitle if sk else '') or 'Read the correspondence, then complete the request below.' }}</p>
+      </div>
+
+      <section class="dc-card">
+        <h2>Correspondence</h2>
+        {% if inject_text %}
+        <div class="dc-note"><span class="ic">!</span><div>{{ inject_text }}</div></div>
+        {% endif %}
+        <div class="dc-pane" data-steer-pane="content">{{ content }}</div>
+      </section>
+
+      <section class="dc-card">
+        <h2>Request</h2>
+        <div class="dc-meta">
+          {% for s in signals %}
+          <div class="dc-row"><span class="k">{{ s.label }}</span><span class="v">{{ s.value|num }}</span></div>
+          {% endfor %}
+          {% for k, v in (sk.context if sk else ()) %}
+          <div class="dc-row"><span class="k">{{ k }}</span><span class="v">{{ v }}</span></div>
+          {% endfor %}
+        </div>
+        <div class="dc-form">
+          {% for f in form_fields %}
+          <div class="dc-f">
+            <label for="f-{{ f.name }}">{{ f.label }}</label>
+            <input id="f-{{ f.name }}" data-steer-field="{{ f.name }}"
+                   type="{{ 'number' if f.kind == 'num' else 'text' }}"
+                   autocomplete="off" placeholder="">
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <div class="dc-act">
+        <button class="dc-btn pri" data-steer-action="confirm"
+                onclick="submitForm()">{{ (sk.confirm_label if sk else '') or 'Submit request' }}</button>
+        <button class="dc-btn" data-steer-action="review"
+                onclick="routeToReview()">{{ (sk.review_label if sk else '') or 'Hold for review' }}</button>
+        <button class="dc-btn" data-steer-action="clarify" onclick="askRequester()">Ask the requester</button>
+        <span id="status" class="dc-st"></span>
+      </div>
+      <div class="dc-foot">STEER-Bench · {{ task.domain }}</div>
+    </div>
+  </main>
+</div>
+{% endblock %}

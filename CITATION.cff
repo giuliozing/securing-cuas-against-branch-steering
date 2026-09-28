@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the paper below."
+type: software
+title: "Securing Computer-Use Agents Against Branch-Steering Attacks"
+authors:
+  - family-names: "Zingrillo"
+    given-names: "Giulio"
+  - family-names: "Foerster"
+    given-names: "Hanna"
+  - family-names: "Shumailov"
+    given-names: "Ilia"
+  - family-names: "Zhao"
+    given-names: "Yiren"
+  - family-names: "Mullins"
+    given-names: "Robert"
+abstract: >-
+  Modern Computer Use Agents (CUAs) directly interact with graphical user interfaces and execute third-party web tools, exposing them to indirect prompt injection across every rendered page and tool response. While the Dual-LLM pattern is the primary system-level architecture offering formal security guarantees, using an isolated Planner LLM (P-LLM) to fix execution paths before processing untrusted inputs via a Quarantined LLM (Q-LLM), these guarantees break down in graphical environments. Because CUA interaction is inherently dynamic, plans cannot remain data-independent; they must branch based on anticipated runtime web content, covering all possible cases the agent may encounter. This exposes agents to branch steering attacks, where an adversary crafts untrusted data to coerce a CUA down a hazardous, pre-approved branch without injecting explicit instructions. We systematically study branch steering attacks and introduce STEER-Bench (101 tasks across 9 domains), showing high attack success against both standard (94.4%) and vanilla Dual-LLM (89.5%) CUAs. We then propose COBRA, an architecture that pairs trusted branching plans with ahead-of-time capability constraints, strictly bounding the parameters and destinations each branch may execute. On STEER-Bench, COBRA reduces attack success to 0% while retaining 97% benign utility.

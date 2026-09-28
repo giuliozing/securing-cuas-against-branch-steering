@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "steer-bench"
+version = "3.0.0.dev0"
+description = "A live GUI + MCP + HTTP benchmark for branch-steering and compound prompt-injection attacks on computer-use agents"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["benchmark", "prompt-injection", "computer-use", "agents", "security", "mcp"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Security",
+]
+
+# The base install is the BENCHMARK: the site, the task registry, the judge and the
+# agent-adapter API. It deliberately does not depend on any defence — see `[brh]`.
+dependencies = [
+    "flask>=2.3",
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+# The MCP channel: suites S3/S4 and the MCP half of the open track.
+mcp = ["fastmcp>=2.0"]
+# A browser-driving reference agent (the open track's ReAct adapter).
+live = ["playwright>=1.40", "openai>=1.30"]
+# OUR system under test. The only extra that reaches outside this package; without it
+# the defended track is unavailable and the substrate gate still runs in full.
+brh = ["mitmproxy>=10.0", "pydantic>=2.0"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+steerbench = "steerbench.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+steerbench = [
+    "site/templates/*.html",
+    "site/templates/**/*.html",
+    "site/static/*",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The oracles are argparse scripts, not pytest modules; tests/ wraps them. Keep pytest
+# out of src/.
+norecursedirs = ["src", "results", "scripts"]

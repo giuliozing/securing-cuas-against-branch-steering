@@ -1,0 +1,160 @@
+{% extends "_base.html" %}
+{#
+  Archetype `procedure` — an untrusted content pane plus several NAMED steps.
+
+  What distinguishes it from `document` and from `workflow`, and why suite S7 needs it:
+
+  * `document` has ONE guarded action whose body the agent authors. The question it can
+    ask is "what did the wire carry".
+  * `workflow` has MANY instances of ONE action, one per row. The question it can ask is
+    "which row's authority applied".
+  * `procedure` has SEVERAL DIFFERENT actions in a fixed order, each its own enforced
+    request. Only here can the page ask "which action, in what order, how many times" —
+    and only here can an injection answer it differently from the plan.
+
+  Every step declared by `/__config` is rendered, INCLUDING the one no plan authorises.
+  That is deliberate: the off-plan step is a real capability of the application, so it is
+  on the screen in both variants. A button that appeared only under attack would put the
+  answer in the HTML and the suite would measure a diff instead of an injection.
+
+  There is no `confirm` affordance. A procedure has no single "the action" to confirm —
+  the steps are the actions — so the page exposes `data-steer-step` per step, plus the
+  two affordances every page in this benchmark carries (route to review, ask the
+  requester). `tools/render_check.py` holds it to exactly that contract.
+#}
+{% set sk = task.skin %}
+{% block title %}{{ sk.brand if sk else task.title }} — {{ task.title }}{% endblock %}
+{% block body_class %}proc{% if sk and sk.dark %} dark{% endif %}{% endblock %}
+{% block head_extra %}
+<style>
+  body.proc{--ac:{{ sk.accent if sk else '#3d7a5f' }};
+    --bg:#f5f7f9;--panel:#fff;--ink:#18212e;--mut:#6a7686;--line:#e2e7ee;
+    background:var(--bg);color:var(--ink);margin:0;
+    font:14px/1.6 "Inter",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body.proc.dark{--bg:#0c1017;--panel:#141a24;--ink:#e6ecf4;--mut:#8a95a6;--line:#243040;}
+  .pr-app{display:grid;grid-template-columns:{{ '208px' if sk and sk.nav else '0' }} 1fr;
+    min-height:100vh;}
+  .pr-side{background:color-mix(in srgb, var(--ac) 14%, #101720);color:#c6d2df;padding:0 0 20px;}
+  body.proc.dark .pr-side{background:#080d14;}
+  .pr-brand{display:flex;align-items:center;gap:10px;padding:18px 20px 20px;}
+  .pr-brand b{color:#fff;font-size:14px;display:block;} .pr-brand span{font-size:11px;color:#93a3c6;}
+  .pr-nav a{display:block;padding:9px 20px;color:#b4c0d0;text-decoration:none;font-size:13px;}
+  .pr-nav a.on{background:color-mix(in srgb, var(--ac) 28%, transparent);color:#fff;
+    box-shadow:inset 3px 0 0 var(--ac);font-weight:600;}
+  .pr-top{display:flex;align-items:center;gap:12px;padding:14px 30px;background:var(--panel);
+    border-bottom:1px solid var(--line);}
+  .pr-mark{width:32px;height:32px;border-radius:9px;background:var(--ac);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;}
+  .pr-top b{font-size:14px;} .pr-top .who{margin-left:auto;color:var(--mut);font-size:13px;}
+  .pr-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;
+    background:color-mix(in srgb, var(--ac) 14%, transparent);color:var(--ac);
+    border:1px solid color-mix(in srgb, var(--ac) 40%, transparent);}
+  .pr-wrap{max-width:1040px;padding:24px 30px 48px;
+    display:grid;grid-template-columns:1.3fr 1fr;gap:22px;align-items:start;}
+  .pr-h{grid-column:1/-1;margin:0 0 2px;}
+  .pr-h h1{font-size:21px;margin:0 0 4px;letter-spacing:-.01em;display:flex;align-items:center;gap:11px;}
+  .pr-h p{margin:0;color:var(--mut);font-size:13px;}
+  .pr-card{background:var(--panel);border:1px solid var(--line);border-radius:13px;
+    box-shadow:0 1px 2px rgba(20,35,70,.04),0 8px 24px rgba(20,35,70,.05);overflow:hidden;}
+  .pr-card h2{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);
+    margin:0;padding:14px 20px;border-bottom:1px solid var(--line);}
+  .pr-pane{padding:18px 20px;white-space:pre-wrap;font-size:13.5px;max-height:420px;overflow:auto;}
+  .pr-meta{padding:6px 20px 14px;}
+  .pr-row{display:flex;justify-content:space-between;gap:16px;padding:11px 0;
+    border-bottom:1px dashed var(--line);}
+  .pr-row:last-child{border-bottom:none;}
+  .pr-row .k{color:var(--mut);font-size:13px;} .pr-row .v{font-weight:600;text-align:right;}
+  .pr-steps{padding:8px 20px 18px;}
+  .pr-step{display:flex;align-items:center;gap:12px;padding:10px 0;
+    border-bottom:1px dashed var(--line);}
+  .pr-step:last-child{border-bottom:none;}
+  .pr-step .n{width:22px;height:22px;border-radius:50%;background:var(--bg);
+    border:1px solid var(--line);color:var(--mut);font-size:11px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .pr-step .lb{flex:1;font-size:13.5px;}
+  .pr-step .st{color:var(--mut);font-size:12px;min-width:52px;text-align:right;}
+  .pr-btn{border:1px solid var(--line);border-radius:9px;padding:7px 14px;font-size:13px;
+    font-weight:650;cursor:pointer;background:var(--panel);color:var(--ink);font-family:inherit;}
+  .pr-btn.pri{background:var(--ac);border-color:var(--ac);color:#fff;}
+  .pr-note{display:flex;gap:10px;margin:0 20px 16px;padding:12px 14px;border-radius:11px;
+    background:#fff7e8;border:1px solid #f0dcae;color:#7a5a12;font-size:13px;}
+  .pr-note .ic{font-weight:800;color:#c08a1a;}
+  .pr-act{grid-column:1/-1;display:flex;align-items:center;gap:11px;margin-top:4px;}
+  .pr-st{color:var(--mut);font-size:13px;}
+  .pr-foot{grid-column:1/-1;color:#8a94a8;font-size:12px;margin-top:14px;}
+</style>
+{% endblock %}
+{% block shell %}
+<div class="pr-app">
+  {% if sk and sk.nav %}
+  <aside class="pr-side">
+    <div class="pr-brand">
+      <div class="pr-mark">{{ sk.mark or sk.brand[:2]|upper }}</div>
+      <div><b>{{ sk.brand }}</b><span>{{ sk.tagline }}</span></div>
+    </div>
+    <nav class="pr-nav">
+      {% for item in sk.nav %}
+      <a href="#" class="{{ 'on' if loop.last else '' }}">{{ item }}</a>
+      {% endfor %}
+    </nav>
+  </aside>
+  {% endif %}
+  <main>
+    <div class="pr-top">
+      {% if not (sk and sk.nav) %}
+      <div class="pr-mark">{{ (sk.mark if sk else '') or task.theme[:2]|upper }}</div>
+      {% endif %}
+      <b>{{ sk.brand if sk else task.title }}</b>
+      <span class="who">Signed in · {{ task.domain }}</span>
+    </div>
+    <div class="pr-wrap">
+      <div class="pr-h">
+        <h1>{{ (sk.heading if sk else '') or task.title }}
+          {% if sk and sk.badge %}<span class="pr-badge">{{ sk.badge }}</span>{% endif %}</h1>
+        <p>{{ (sk.subtitle if sk else '') or 'Read the case notes, then work through the procedure.' }}</p>
+      </div>
+
+      <section class="pr-card">
+        <h2>Case notes</h2>
+        {% if inject_text %}
+        <div class="pr-note"><span class="ic">!</span><div>{{ inject_text }}</div></div>
+        {% endif %}
+        <div class="pr-pane" data-steer-pane="content">{{ content }}</div>
+      </section>
+
+      <section class="pr-card">
+        <h2>Record</h2>
+        <div class="pr-meta">
+          {% for s in signals %}
+          <div class="pr-row"><span class="k">{{ s.label }}</span><span class="v">{{ s.value|num }}</span></div>
+          {% endfor %}
+          {% for k, v in (sk.context if sk else ()) %}
+          <div class="pr-row"><span class="k">{{ k }}</span><span class="v">{{ v }}</span></div>
+          {% endfor %}
+        </div>
+        <h2>Available actions</h2>
+        <div class="pr-steps">
+          {% for st in steps %}
+          <div class="pr-step">
+            <span class="n">{{ loop.index }}</span>
+            <span class="lb">{{ st.label }}</span>
+            <button class="pr-btn{{ ' pri' if st.role == 'act' else '' }}"
+                    data-steer-step="{{ st.name }}"
+                    onclick="runStep('{{ st.name }}')">Run</button>
+            <span class="st" id="step-status-{{ st.name }}"></span>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <div class="pr-act">
+        <button class="pr-btn" data-steer-action="review"
+                onclick="routeToReview()">{{ (sk.review_label if sk else '') or 'Hold for review' }}</button>
+        <button class="pr-btn" data-steer-action="clarify" onclick="askRequester()">Ask the requester</button>
+        <span id="status" class="pr-st"></span>
+      </div>
+      <div class="pr-foot">STEER-Bench · {{ task.domain }}</div>
+    </div>
+  </main>
+</div>
+{% endblock %}

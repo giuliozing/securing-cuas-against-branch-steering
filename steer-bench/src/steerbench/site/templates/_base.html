@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ task.title }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/steer.css">
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  {# Bespoke templates override `shell` for a full product-grade layout; the
+     generic template keeps the default topbar + card shell below. Either way the
+     shared action bridge (script) stays centralised. #}
+  {% block shell %}
+  <div class="topbar">
+    <span class="logo">{% block logo %}§{% endblock %}</span>
+    <span class="brand">{% block brand %}{{ task.title }}{% endblock %}</span>
+    <span class="spacer"></span>
+    <span class="user">{% block user %}Signed in{% endblock %}</span>
+  </div>
+  <div class="wrap">
+    {% block content %}{% endblock %}
+    <div class="foot">STEER-Bench-Web · synthetic environment · {{ task.domain }}</div>
+  </div>
+  {% endblock %}
+
+  {# A grounded click hits these same-origin (loopback) endpoints; the SITE then
+     issues the guarded action to its destination THROUGH the enforcing proxy,
+     carrying the REAL channel body (resolved server-side, never shown as text),
+     so a displayed≠real divergence is invisible to a grounding agent and is
+     caught on the wire — identical enforcement to the structural oracle. #}
+  <script>
+    const THEME = {{ task.theme|tojson }};
+    // `r.ok` is checked as well as `action_status`, and the difference is not cosmetic.
+    // `action_status` is the GUARDED action's own result — 403 when the enforcer refused
+    // it, which must read as "Blocked". `r.ok` is whether the bridge call itself
+    // succeeded; a 500 from the site (an unreachable destination, say) returns no JSON at
+    // all, so `action_status` is undefined and must not fall through to "Submitted",
+    // which would mask a failed action as a successful one.
+    function _report(id, r, j, okLabel) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (!r.ok) { el.textContent = "Error"; return; }
+      el.textContent = (j.action_status && j.action_status >= 400)
+        ? "Blocked" : (okLabel || "Submitted");
+    }
+    async function _post(path, okLabel) {
+      try {
+        const r = await fetch("/" + THEME + path, {method: "POST"});
+        const j = await r.json().catch(() => ({}));
+        _report("status", r, j, okLabel);
+      } catch (e) {
+        const el = document.getElementById("status");
+        if (el) el.textContent = "Error";
+      }
+    }
+    function confirmAction() { _post("/confirm"); }
+    function routeToReview() { _post("/act-review"); }
+    // The abstention affordance: "I was not given this value," expressed as a click
+    // rather than only an HTTP endpoint or Python tool call, so a GUI-only agent can
+    // reach it too. It is rendered on EVERY page, never only on the tasks where
+    // abstaining is correct: a button that appeared exactly when the answer was "ask"
+    // would leak the answer in the HTML.
+    function askRequester() { _post("/clarify", "Sent to requester"); }
+
+    // Archetype `document`: the confirm affordance carries what the agent TYPED.
+    // Collected from `data-steer-field` rather than from a form's name attributes so
+    // the page and the render check agree on what an input is by construction.
+    async function submitForm() {
+      const fields = {};
+      document.querySelectorAll("[data-steer-field]").forEach(el => {
+        fields[el.getAttribute("data-steer-field")] = el.value;
+      });
+      try {
+        const r = await fetch("/" + THEME + "/__submit", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(fields)
+        });
+        const j = await r.json().catch(() => ({}));
+        _report("status", r, j);
+      } catch (e) {
+        const el = document.getElementById("status");
+        if (el) el.textContent = "Error";
+      }
+    }
+
+    // Archetype `procedure`: one guarded action per STEP. Each is its own enforced
+    // request, so the order and the number of clicks are what `/__state` records —
+    // which is the whole evidence surface of suite S7.
+    async function runStep(name) {
+      try {
+        const r = await fetch("/" + THEME + "/__step/" + name, {method: "POST"});
+        const j = await r.json().catch(() => ({}));
+        const blocked = !r.ok || (j.action_status && j.action_status >= 400);
+        const el = document.getElementById("step-status-" + name);
+        if (el) el.textContent = !r.ok ? "Error" : (blocked ? "Refused" : "Done");
+        const g = document.getElementById("status");
+        if (g) g.textContent = name + ": " + (blocked ? "refused" : "done");
+      } catch (e) {
+        const el = document.getElementById("step-status-" + name);
+        if (el) el.textContent = "Error";
+      }
+    }
+
+    // Archetype `workflow`: one guarded action per row. Each is its own enforced
+    // request, so a plan that loops produces several branch transitions.
+    async function confirmItem(i) {
+      try {
+        const r = await fetch("/" + THEME + "/__item/" + i + "/confirm", {method: "POST"});
+        const j = await r.json().catch(() => ({}));
+        const blocked = !r.ok || (j.action_status && j.action_status >= 400);
+        const el = document.getElementById("item-status-" + i);
+        if (el) el.textContent = !r.ok ? "Error" : (blocked ? "Blocked" : "Done");
+        const g = document.getElementById("status");
+        if (g) g.textContent = "Item " + i + ": " + (blocked ? "blocked" : "done");
+      } catch (e) {
+        const el = document.getElementById("item-status-" + i);
+        if (el) el.textContent = "Error";
+      }
+    }
+  </script>
+</body>
+</html>

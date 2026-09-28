@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mesa"
+version = "1.0.0"
+description = "MCP and Endpoint Sitemap generator for Agents: crawls a site and proposes a candidate agentic sitemap + MCP manifest for owner review."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+keywords = ["mcp", "sitemap", "agents", "computer-use", "security"]
+dependencies = [
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
+    "prompt_toolkit>=3.0",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.30"]
+anthropic = ["anthropic>=0.51"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+mesa = "mesa.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

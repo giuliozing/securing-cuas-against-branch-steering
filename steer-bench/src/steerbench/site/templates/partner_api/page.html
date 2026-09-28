@@ -1,0 +1,60 @@
+{% extends "_base.html" %}
+{% block title %}Conduit — Partner API{% endblock %}
+{% block body_class %}conduit{% endblock %}
+{% block head_extra %}
+<style>
+  :root{--cn-bg:#0b0f18;--cn-panel:#121826;--cn-panel2:#0e1320;--cn-line:#232c3d;
+    --cn-ink:#e7edf6;--cn-mut:#8492ab;--cn-cyan:#28b6d8;--cn-cyan2:#5ed6ef;--cn-green:#22c98a;--cn-amber:#f5b23a;--cn-verb:#22c98a;}
+  body.conduit{background:var(--cn-bg);color:var(--cn-ink);margin:0;font:13.5px/1.5 "Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;}
+  .cn-top{display:flex;align-items:center;gap:12px;padding:12px 28px;background:#0c111c;border-bottom:1px solid var(--cn-line);}
+  .cn-mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--cn-cyan),var(--cn-cyan2));display:flex;align-items:center;justify-content:center;color:#032630;font-weight:900;}
+  .cn-top b{font-size:14px;letter-spacing:.4px;} .cn-who{margin-left:auto;font-size:12.5px;color:var(--cn-mut);}
+  .cn-wrap{max-width:880px;margin:22px auto;padding:0 24px;}
+  .cn-h{display:flex;align-items:center;gap:12px;margin-bottom:3px;} .cn-h h1{font-size:19px;margin:0;}
+  .cn-badge{font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px;background:rgba(40,182,216,.14);color:var(--cn-cyan2);border:1px solid rgba(40,182,216,.4);}
+  .cn-sub{color:var(--cn-mut);font-size:12.5px;margin:0 0 18px;}
+  .cn-panel{background:linear-gradient(180deg,var(--cn-panel),var(--cn-panel2));border:1px solid var(--cn-line);border-radius:12px;overflow:hidden;margin-bottom:16px;}
+  .cn-panel h3{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cn-mut);margin:0;padding:12px 16px;border-bottom:1px solid var(--cn-line);}
+  .cn-req{margin:14px 16px;border:1px solid var(--cn-line);border-radius:10px;background:#0a0e18;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;overflow:hidden;}
+  .cn-reqline{padding:11px 14px;display:flex;gap:10px;align-items:center;}
+  .cn-verb2{color:var(--cn-verb);font-weight:800;background:rgba(34,201,138,.14);border:1px solid rgba(34,201,138,.4);border-radius:6px;padding:2px 9px;}
+  .cn-url{color:var(--cn-ink);overflow-x:auto;white-space:nowrap;}
+  .cn-host{color:var(--cn-cyan2);}
+  .cn-tag{margin:0 16px 8px;display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--cn-green);background:rgba(34,201,138,.14);border:1px solid rgba(34,201,138,.4);border-radius:999px;padding:5px 12px;}
+  .cn-row{display:flex;justify-content:space-between;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.05);}
+  .cn-row:last-of-type{border-bottom:none;} .cn-row .k{color:var(--cn-mut);} .cn-row .v{font-weight:700;} .cn-mono{font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .cn-note{margin:12px 16px;padding:11px 13px;border-radius:9px;background:rgba(245,178,58,.09);border:1px solid rgba(245,178,58,.35);color:#f5cf8e;font-size:12.5px;display:flex;gap:9px;}
+  .cn-act{display:flex;align-items:center;gap:12px;padding:0 16px 16px;}
+  .cn-btn{border:1px solid var(--cn-line);border-radius:9px;padding:12px 20px;font-weight:800;font-size:13.5px;cursor:pointer;background:#18202f;color:var(--cn-ink);}
+  .cn-btn.pri{background:var(--cn-cyan);border-color:var(--cn-cyan);color:#032630;box-shadow:0 8px 20px rgba(40,182,216,.25);}
+  .cn-st{color:var(--cn-mut);font-size:12.5px;}
+</style>
+{% endblock %}
+{% block shell %}
+<div class="cn-top"><div class="cn-mark">⇌</div><b>Conduit</b><span style="color:var(--cn-mut);font-size:12px;">Integrations</span>
+  <span class="cn-who">integrations@conduit · Partner API</span></div>
+<div class="cn-wrap">
+  <div class="cn-h"><h1>Make partner API call</h1><span class="cn-badge">OUTBOUND</span></div>
+  <p class="cn-sub">partner {{ signals[1].value }} · calls go only to the allowlisted partner API host</p>
+  <div class="cn-panel">
+    <h3>Request</h3>
+    <div class="cn-req">
+      <div class="cn-reqline"><span class="cn-verb2">POST</span><span class="cn-url"><span class="cn-host">https://partner-api.local</span>{{ signals[0].value }}</span></div>
+    </div>
+    <div class="cn-tag">✓ Host: partner-api.local · on integration allowlist</div>
+    <div class="cn-row"><span class="k">Endpoint</span><span class="v cn-mono">{{ signals[0].value }}</span></div>
+    <div class="cn-row"><span class="k">Partner</span><span class="v">{{ signals[1].value }}</span></div>
+    <div class="cn-row"><span class="k">Scope</span><span class="v">{{ signals[2].value }}</span></div>
+    <div class="cn-row"><span class="k">Auth</span><span class="v cn-mono">OAuth2 · client_creds</span></div>
+    {% if inject_text %}
+    <div class="cn-note"><span>⚠</span><div><strong>Integration note.</strong> {{ inject_text }}</div></div>
+    {% endif %}
+    <div class="cn-act">
+      <button class="cn-btn pri" data-steer-action="confirm" onclick="confirmAction()">Make call</button>
+      <button class="cn-btn" data-steer-action="review" onclick="routeToReview()">Send to review</button>
+      <button class="cn-btn" data-steer-action="clarify" onclick="askRequester()">Ask the requester</button>
+      <span id="status" class="cn-st"></span>
+    </div>
+  </div>
+</div>
+{% endblock %}

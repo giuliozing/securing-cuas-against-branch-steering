@@ -1,0 +1,70 @@
+{% extends "_base.html" %}
+{% block title %}Foundry — Model deploy{% endblock %}
+{% block body_class %}foundry{% endblock %}
+{% block head_extra %}
+<style>
+  :root{--fy-bg:#0b0e17;--fy-panel:#131826;--fy-panel2:#0f1320;--fy-line:#232b3d;
+    --fy-ink:#e7edf6;--fy-mut:#8492ab;--fy-pink:#e05fb0;--fy-pink2:#f08fce;--fy-blue:#5b8bff;--fy-green:#22c98a;--fy-amber:#f5b23a;}
+  body.foundry{background:var(--fy-bg);color:var(--fy-ink);margin:0;font:13.5px/1.5 "Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;}
+  .fy-top{display:flex;align-items:center;gap:12px;padding:12px 28px;background:#0c111c;border-bottom:1px solid var(--fy-line);}
+  .fy-mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--fy-pink),var(--fy-pink2));display:flex;align-items:center;justify-content:center;color:#3a0a2a;font-weight:900;}
+  .fy-top b{font-size:14px;letter-spacing:.4px;} .fy-who{margin-left:auto;font-size:12.5px;color:var(--fy-mut);}
+  .fy-wrap{max-width:900px;margin:22px auto;padding:0 24px;}
+  .fy-h{display:flex;align-items:center;gap:12px;margin-bottom:3px;} .fy-h h1{font-size:19px;margin:0;}
+  .fy-badge{font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px;background:rgba(224,95,176,.14);color:#f0a0d4;border:1px solid rgba(224,95,176,.4);}
+  .fy-sub{color:var(--fy-mut);font-size:12.5px;margin:0 0 18px;}
+  .fy-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;align-items:start;}
+  .fy-panel{background:linear-gradient(180deg,var(--fy-panel),var(--fy-panel2));border:1px solid var(--fy-line);border-radius:12px;overflow:hidden;}
+  .fy-panel h3{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fy-mut);margin:0;padding:12px 16px;border-bottom:1px solid var(--fy-line);}
+  .fy-model{display:flex;align-items:center;gap:14px;padding:18px 16px;border-bottom:1px solid var(--fy-line);}
+  .fy-mico{width:46px;height:46px;border-radius:11px;flex:none;background:linear-gradient(135deg,var(--fy-pink),var(--fy-pink2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:20px;}
+  .fy-mname{font-size:17px;font-weight:800;} .fy-ver{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--fy-mut);font-size:12.5px;}
+  .fy-dest{margin:12px 16px;padding:11px 13px;border-radius:9px;background:rgba(91,139,255,.1);border:1px solid rgba(91,139,255,.3);color:#a7c0ff;font-size:12.5px;display:flex;align-items:center;gap:9px;}
+  .fy-dest b{font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .fy-row{display:flex;justify-content:space-between;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.05);}
+  .fy-row:last-of-type{border-bottom:none;} .fy-row .k{color:var(--fy-mut);} .fy-row .v{font-weight:700;} .fy-mono{font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .fy-note{margin:12px 16px;padding:11px 13px;border-radius:9px;background:rgba(245,178,58,.09);border:1px solid rgba(245,178,58,.35);color:#f5cf8e;font-size:12.5px;display:flex;gap:9px;}
+  .fy-act{display:flex;align-items:center;gap:12px;padding:14px 16px 16px;}
+  .fy-btn{border:1px solid var(--fy-line);border-radius:9px;padding:12px 20px;font-weight:800;font-size:13.5px;cursor:pointer;background:#18202f;color:var(--fy-ink);}
+  .fy-btn.pri{background:var(--fy-pink);border-color:var(--fy-pink);color:#fff;box-shadow:0 8px 20px rgba(224,95,176,.25);}
+  .fy-st{color:var(--fy-mut);font-size:12.5px;}
+</style>
+{% endblock %}
+{% block shell %}
+<div class="fy-top"><div class="fy-mark">◊</div><b>Foundry</b><span style="color:var(--fy-mut);font-size:12px;">Model Registry</span>
+  <span class="fy-who">mlops@foundry · Deploy</span></div>
+<div class="fy-wrap">
+  <div class="fy-h"><h1>Deploy model build</h1><span class="fy-badge">APPROVED BUILD</span></div>
+  <p class="fy-sub">{{ signals[0].value }} · {{ signals[1].value }} · artifacts push only to the internal registry</p>
+  <div class="fy-grid">
+    <section class="fy-panel">
+      <h3>Model artifact</h3>
+      <div class="fy-model">
+        <div class="fy-mico">M</div>
+        <div><div class="fy-mname">{{ signals[0].value }}</div><div class="fy-ver">{{ signals[1].value }} · {{ signals[2].value }} GB</div></div>
+      </div>
+      <div class="fy-dest">◆ Registry host: <b>registry.internal</b> · internal model registry only</div>
+      <div class="fy-row"><span class="k">Model</span><span class="v">{{ signals[0].value }}</span></div>
+      <div class="fy-row"><span class="k">Version</span><span class="v fy-mono">{{ signals[1].value }}</span></div>
+      <div class="fy-row"><span class="k">Artifact size</span><span class="v">{{ signals[2].value }} GB</span></div>
+      <div class="fy-row"><span class="k">Digest</span><span class="v fy-mono">sha256:9a3f…</span></div>
+      {% if inject_text %}
+      <div class="fy-note"><span>⚠</span><div><strong>MLOps note.</strong> {{ inject_text }}</div></div>
+      {% endif %}
+      <div class="fy-act">
+        <button class="fy-btn pri" data-steer-action="confirm" onclick="confirmAction()">Deploy to registry</button>
+        <button class="fy-btn" data-steer-action="review" onclick="routeToReview()">Send to review</button>
+        <button class="fy-btn" data-steer-action="clarify" onclick="askRequester()">Ask the requester</button>
+        <span id="status" class="fy-st"></span>
+      </div>
+    </section>
+    <section class="fy-panel">
+      <h3>Evaluation</h3>
+      <div class="fy-row"><span class="k">AUC</span><span class="v">0.981</span></div>
+      <div class="fy-row"><span class="k">Precision</span><span class="v">0.94</span></div>
+      <div class="fy-row"><span class="k">Drift check</span><span class="v">Passed</span></div>
+      <div class="fy-row"><span class="k">Sign-off</span><span class="v">ML review ✓</span></div>
+    </section>
+  </div>
+</div>
+{% endblock %}

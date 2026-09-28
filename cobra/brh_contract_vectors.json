@@ -1,0 +1,716 @@
+{
+  "description": "Golden test vectors for the BRH constraint evaluation contract. The semantics of `op`/`value` against an observed runtime value is implemented twice \u2014 cobra/brh/contract.py (reference, used by tests and by MCP proxy) and cobra/http_proxy/brh_check.py (HTTP enforcer, stdlib-only) \u2014 with no runtime dependency between the two processes. Both test suites consume this file: any semantic divergence turns into a named red test on the diverging side. Update this file first when the contract evolves.",
+  "semantics": [
+    "Strict types, no coercion: a JSON string never equals a number ('42' != 42), mirroring pydantic Strict* in cobra/brh/schema.py.",
+    "bool is not a number: although bool is a subclass of int in Python, True never satisfies a numeric constraint (== 1, <= 2, ...).",
+    "Numeric cross-type comparison is allowed between int and float (42 == 42.0, 42 <= 42.99).",
+    "String comparison is exact and case-sensitive.",
+    "Unresolved placeholders ('trigger_value', 'from_plan') as constraint value make the constraint unsatisfiable - fail-closed, never a wildcard, even on a literal string match.",
+    "Ordering ops (<=, >=) are numeric-only: a non-numeric constraint value or observed value is a violation.",
+    "'in' membership uses the same typed equality as '=='; an empty set or a set containing a placeholder member is unsatisfiable.",
+    "Unknown ops are unsatisfiable (fail-closed).",
+    "null/None observed values never satisfy any constraint.",
+    "Structural ops: 'eq_struct' pins a whole list/dict by recursive value equality (scalar leaves keep ==-strict typing); 'subset' requires every observed list element to value-match a planned member, blocking list-append attacks. Both are unsatisfiable if any placeholder remains in value."
+  ],
+  "vectors": [
+    {
+      "id": "le-int-vs-float-sat",
+      "constraint": {
+        "op": "<=",
+        "value": 42.99
+      },
+      "observed": 42,
+      "expect": "satisfied",
+      "note": "int observed vs float constraint: numeric cross-type comparison"
+    },
+    {
+      "id": "le-violation",
+      "constraint": {
+        "op": "<=",
+        "value": 42.99
+      },
+      "observed": 500,
+      "expect": "violation",
+      "note": "the canonical branch-steering case: payload exceeds trigger_value"
+    },
+    {
+      "id": "le-boundary-eq",
+      "constraint": {
+        "op": "<=",
+        "value": 42.99
+      },
+      "observed": 42.99,
+      "expect": "satisfied",
+      "note": "boundary is inclusive"
+    },
+    {
+      "id": "ge-sat",
+      "constraint": {
+        "op": ">=",
+        "value": 10
+      },
+      "observed": 11,
+      "expect": "satisfied"
+    },
+    {
+      "id": "ge-violation",
+      "constraint": {
+        "op": ">=",
+        "value": 10
+      },
+      "observed": 9.5,
+      "expect": "violation"
+    },
+    {
+      "id": "eq-num-cross-type",
+      "constraint": {
+        "op": "==",
+        "value": 42
+      },
+      "observed": 42.0,
+      "expect": "satisfied",
+      "note": "int/float numeric equality"
+    },
+    {
+      "id": "eq-num-violation",
+      "constraint": {
+        "op": "==",
+        "value": 42
+      },
+      "observed": 43,
+      "expect": "violation"
+    },
+    {
+      "id": "eq-str-sat",
+      "constraint": {
+        "op": "==",
+        "value": "GBP"
+      },
+      "observed": "GBP",
+      "expect": "satisfied"
+    },
+    {
+      "id": "eq-str-case",
+      "constraint": {
+        "op": "==",
+        "value": "GBP"
+      },
+      "observed": "gbp",
+      "expect": "violation",
+      "note": "string equality is case-sensitive"
+    },
+    {
+      "id": "le-str-observed",
+      "constraint": {
+        "op": "<=",
+        "value": 42.99
+      },
+      "observed": "500",
+      "expect": "violation",
+      "note": "no coercion: string observed vs numeric constraint is a type mismatch"
+    },
+    {
+      "id": "eq-str-vs-num",
+      "constraint": {
+        "op": "==",
+        "value": "500"
+      },
+      "observed": 500,
+      "expect": "violation",
+      "note": "no coercion in the other direction either"
+    },
+    {
+      "id": "eq-bool-vs-one",
+      "constraint": {
+        "op": "==",
+        "value": 1
+      },
+      "observed": true,
+      "expect": "violation",
+      "note": "bool is excluded from numerics despite bool being a subclass of int in Python"
+    },
+    {
+      "id": "eq-bool-vs-zero",
+      "constraint": {
+        "op": "==",
+        "value": 0
+      },
+      "observed": false,
+      "expect": "violation"
+    },
+    {
+      "id": "le-bool-observed",
+      "constraint": {
+        "op": "<=",
+        "value": 2
+      },
+      "observed": true,
+      "expect": "violation",
+      "note": "bool never satisfies an ordering constraint"
+    },
+    {
+      "id": "eq-unresolved-trigger",
+      "constraint": {
+        "op": "==",
+        "value": "trigger_value"
+      },
+      "observed": "trigger_value",
+      "expect": "violation",
+      "note": "unresolved placeholder is unsatisfiable even on a literal string match"
+    },
+    {
+      "id": "le-unresolved-trigger",
+      "constraint": {
+        "op": "<=",
+        "value": "trigger_value"
+      },
+      "observed": 10,
+      "expect": "violation",
+      "note": "hook could not resolve the placeholder (non-scalar/missing trigger): fail-closed"
+    },
+    {
+      "id": "eq-unresolved-from-plan",
+      "constraint": {
+        "op": "==",
+        "value": "from_plan"
+      },
+      "observed": "SKU-7741",
+      "expect": "violation",
+      "note": "'from_plan' is not resolvable by the HTTP enforcer: unsatisfiable"
+    },
+    {
+      "id": "in-sat",
+      "constraint": {
+        "op": "in",
+        "value": [
+          "GBP",
+          "EUR"
+        ]
+      },
+      "observed": "GBP",
+      "expect": "satisfied"
+    },
+    {
+      "id": "in-violation",
+      "constraint": {
+        "op": "in",
+        "value": [
+          "GBP",
+          "EUR"
+        ]
+      },
+      "observed": "USD",
+      "expect": "violation"
+    },
+    {
+      "id": "in-case",
+      "constraint": {
+        "op": "in",
+        "value": [
+          "GBP"
+        ]
+      },
+      "observed": "gbp",
+      "expect": "violation",
+      "note": "membership uses case-sensitive string equality"
+    },
+    {
+      "id": "in-num-cross-type",
+      "constraint": {
+        "op": "in",
+        "value": [
+          42,
+          43
+        ]
+      },
+      "observed": 42.0,
+      "expect": "satisfied",
+      "note": "membership uses the same typed equality as '=='"
+    },
+    {
+      "id": "in-bool-observed",
+      "constraint": {
+        "op": "in",
+        "value": [
+          1,
+          2
+        ]
+      },
+      "observed": true,
+      "expect": "violation"
+    },
+    {
+      "id": "in-placeholder-member",
+      "constraint": {
+        "op": "in",
+        "value": [
+          "trigger_value",
+          "GBP"
+        ]
+      },
+      "observed": "GBP",
+      "expect": "violation",
+      "note": "a set containing a placeholder is unsatisfiable as a whole (the validator forbids it; the enforcer fails closed anyway)"
+    },
+    {
+      "id": "in-empty-set",
+      "constraint": {
+        "op": "in",
+        "value": []
+      },
+      "observed": "GBP",
+      "expect": "violation",
+      "note": "schema-invalid, but the enforcer must fail closed on it"
+    },
+    {
+      "id": "le-str-constraint",
+      "constraint": {
+        "op": "<=",
+        "value": "zzz"
+      },
+      "observed": "abc",
+      "expect": "violation",
+      "note": "ordering ops are numeric-only: no lexicographic comparison"
+    },
+    {
+      "id": "eq-null-observed",
+      "constraint": {
+        "op": "==",
+        "value": "GBP"
+      },
+      "observed": null,
+      "expect": "violation",
+      "note": "a JSON null in the payload satisfies nothing"
+    },
+    {
+      "id": "unknown-op",
+      "constraint": {
+        "op": "<",
+        "value": 10
+      },
+      "observed": 5,
+      "expect": "violation",
+      "note": "ops outside the contract are unsatisfiable, not errors"
+    },
+    {
+      "id": "subset-sat",
+      "constraint": {
+        "op": "subset",
+        "value": [
+          "AI",
+          "Blockchain"
+        ]
+      },
+      "observed": [
+        "AI",
+        "Blockchain"
+      ],
+      "expect": "satisfied",
+      "note": "exact set passes"
+    },
+    {
+      "id": "subset-proper-sat",
+      "constraint": {
+        "op": "subset",
+        "value": [
+          "AI",
+          "Blockchain"
+        ]
+      },
+      "observed": [
+        "AI"
+      ],
+      "expect": "satisfied",
+      "note": "strict subset passes"
+    },
+    {
+      "id": "subset-append-violation",
+      "constraint": {
+        "op": "subset",
+        "value": [
+          "AI",
+          "Blockchain"
+        ]
+      },
+      "observed": [
+        "AI",
+        "Blockchain",
+        "TrackerNode"
+      ],
+      "expect": "violation",
+      "note": "MCPTox open_nodes append attack: extra member blocked"
+    },
+    {
+      "id": "subset-empty-observed-sat",
+      "constraint": {
+        "op": "subset",
+        "value": [
+          "AI"
+        ]
+      },
+      "observed": [],
+      "expect": "satisfied",
+      "note": "empty observed is a subset of anything"
+    },
+    {
+      "id": "subset-observed-not-list",
+      "constraint": {
+        "op": "subset",
+        "value": [
+          "AI"
+        ]
+      },
+      "observed": "AI",
+      "expect": "violation",
+      "note": "non-list observed never satisfies subset"
+    },
+    {
+      "id": "subset-value-not-list",
+      "constraint": {
+        "op": "subset",
+        "value": "AI"
+      },
+      "observed": [
+        "AI"
+      ],
+      "expect": "violation",
+      "note": "subset requires a list planned value"
+    },
+    {
+      "id": "subset-num-cross-type",
+      "constraint": {
+        "op": "subset",
+        "value": [
+          42,
+          43
+        ]
+      },
+      "observed": [
+        42.0
+      ],
+      "expect": "satisfied",
+      "note": "members use numeric cross-type equality"
+    },
+    {
+      "id": "subset-bool-distinct",
+      "constraint": {
+        "op": "subset",
+        "value": [
+          1
+        ]
+      },
+      "observed": [
+        true
+      ],
+      "expect": "violation",
+      "note": "bool is not a number inside subset"
+    },
+    {
+      "id": "subset-placeholder-member",
+      "constraint": {
+        "op": "subset",
+        "value": [
+          "trigger_value",
+          "AI"
+        ]
+      },
+      "observed": [
+        "AI"
+      ],
+      "expect": "violation",
+      "note": "unresolved placeholder anywhere -> unsatisfiable"
+    },
+    {
+      "id": "eqstruct-list-sat",
+      "constraint": {
+        "op": "eq_struct",
+        "value": [
+          "src/utils.js"
+        ]
+      },
+      "observed": [
+        "src/utils.js"
+      ],
+      "expect": "satisfied",
+      "note": "exact list pin"
+    },
+    {
+      "id": "eqstruct-list-order-violation",
+      "constraint": {
+        "op": "eq_struct",
+        "value": [
+          "a",
+          "b"
+        ]
+      },
+      "observed": [
+        "b",
+        "a"
+      ],
+      "expect": "violation",
+      "note": "order-sensitive"
+    },
+    {
+      "id": "eqstruct-list-len-violation",
+      "constraint": {
+        "op": "eq_struct",
+        "value": [
+          "src/utils.js"
+        ]
+      },
+      "observed": [
+        "src/utils.js",
+        "x"
+      ],
+      "expect": "violation",
+      "note": "length mismatch"
+    },
+    {
+      "id": "eqstruct-list-vs-string",
+      "constraint": {
+        "op": "eq_struct",
+        "value": [
+          "src/utils.js"
+        ]
+      },
+      "observed": ".",
+      "expect": "violation",
+      "note": "MCPTox git_add attack: list pinned, '.' string blocked"
+    },
+    {
+      "id": "eqstruct-scalar-sat",
+      "constraint": {
+        "op": "eq_struct",
+        "value": "GBP"
+      },
+      "observed": "GBP",
+      "expect": "satisfied",
+      "note": "eq_struct generalises == on scalars"
+    },
+    {
+      "id": "eqstruct-scalar-violation",
+      "constraint": {
+        "op": "eq_struct",
+        "value": 42
+      },
+      "observed": 43,
+      "expect": "violation",
+      "note": "scalar inequality"
+    },
+    {
+      "id": "eqstruct-scalar-cross-type-num",
+      "constraint": {
+        "op": "eq_struct",
+        "value": 42
+      },
+      "observed": 42.0,
+      "expect": "satisfied",
+      "note": "numeric cross-type at the leaf"
+    },
+    {
+      "id": "eqstruct-str-vs-num",
+      "constraint": {
+        "op": "eq_struct",
+        "value": "42"
+      },
+      "observed": 42,
+      "expect": "violation",
+      "note": "strict types at the leaf"
+    },
+    {
+      "id": "eqstruct-dict-sat",
+      "constraint": {
+        "op": "eq_struct",
+        "value": {
+          "a": 1,
+          "b": "x"
+        }
+      },
+      "observed": {
+        "b": "x",
+        "a": 1
+      },
+      "expect": "satisfied",
+      "note": "dict equality is key-order-independent"
+    },
+    {
+      "id": "eqstruct-dict-key-violation",
+      "constraint": {
+        "op": "eq_struct",
+        "value": {
+          "a": 1
+        }
+      },
+      "observed": {
+        "a": 1,
+        "b": 2
+      },
+      "expect": "violation",
+      "note": "extra key blocked"
+    },
+    {
+      "id": "eqstruct-placeholder",
+      "constraint": {
+        "op": "eq_struct",
+        "value": [
+          "from_plan"
+        ]
+      },
+      "observed": [
+        "from_plan"
+      ],
+      "expect": "violation",
+      "note": "unresolved placeholder leaf -> unsatisfiable"
+    },
+    {
+      "id": "eq-list-identical-sat",
+      "constraint": {
+        "op": "==",
+        "value": ["AI", "Blockchain"]
+      },
+      "observed": ["AI", "Blockchain"],
+      "expect": "satisfied",
+      "note": "== on a list is structural equality, not the old 'always False' list-guard"
+    },
+    {
+      "id": "eq-list-extended-violation",
+      "constraint": {
+        "op": "==",
+        "value": ["AI", "Blockchain"]
+      },
+      "observed": ["AI", "Blockchain", "Tracker"],
+      "expect": "violation",
+      "note": "an appended element must be rejected, not accepted as a superset"
+    },
+    {
+      "id": "eq-list-reordered-violation",
+      "constraint": {
+        "op": "==",
+        "value": ["AI", "Blockchain"]
+      },
+      "observed": ["Blockchain", "AI"],
+      "expect": "violation",
+      "note": "== on a list is order-sensitive, unlike 'in'/'subset'"
+    },
+    {
+      "id": "eq-dict-identical-sat",
+      "constraint": {
+        "op": "==",
+        "value": {"k": 1}
+      },
+      "observed": {"k": 1},
+      "expect": "satisfied",
+      "note": "== on a dict is structural equality"
+    },
+    {
+      "id": "eq-dict-value-diff-violation",
+      "constraint": {
+        "op": "==",
+        "value": {"k": 1}
+      },
+      "observed": {"k": 2},
+      "expect": "violation",
+      "note": "same key, different value -> unsatisfiable"
+    },
+    {
+      "id": "eq-dict-extra-key-violation",
+      "constraint": {
+        "op": "==",
+        "value": {"k": 1}
+      },
+      "observed": {"k": 1, "j": 2},
+      "expect": "violation",
+      "note": "an added key must be rejected: == requires an identical key set, not a superset"
+    },
+    {
+      "id": "eq-nested-identical-sat",
+      "constraint": {
+        "op": "==",
+        "value": {"order": {"id": 7, "tags": ["AI", "Blockchain"]}}
+      },
+      "observed": {"order": {"id": 7, "tags": ["AI", "Blockchain"]}},
+      "expect": "satisfied",
+      "note": "recursive structural equality through nested dict-of-list"
+    },
+    {
+      "id": "eq-nested-placeholder-violation",
+      "constraint": {
+        "op": "==",
+        "value": {"items": ["a", "from_plan"]}
+      },
+      "observed": {"items": ["a", "from_plan"]},
+      "expect": "violation",
+      "note": "an unresolved placeholder anywhere in the structure is unsatisfiable, even when the two sides are otherwise byte-identical"
+    },
+    {
+      "id": "eq-nested-bool-distinct-violation",
+      "constraint": {
+        "op": "==",
+        "value": {"limits": [3, 1]}
+      },
+      "observed": {"limits": [3, true]},
+      "expect": "violation",
+      "note": "bool is not a number even nested: Python's 1 == True would wrongly accept this leaf under naive equality"
+    },
+    {
+      "id": "eq-null-both-sat",
+      "constraint": {
+        "op": "==",
+        "value": null
+      },
+      "observed": null,
+      "expect": "satisfied",
+      "note": "null == null: the only case null is ever satisfied, never a wildcard"
+    },
+    {
+      "id": "eq-nested-null-both-sat",
+      "constraint": {
+        "op": "==",
+        "value": {"k": null, "j": 1}
+      },
+      "observed": {"k": null, "j": 1},
+      "expect": "satisfied",
+      "note": "a null leaf compares equal to a null leaf inside an otherwise identical structure"
+    },
+    {
+      "id": "eq-nested-null-vs-value-violation",
+      "constraint": {
+        "op": "==",
+        "value": {"k": null}
+      },
+      "observed": {"k": "x"},
+      "expect": "violation",
+      "note": "null is never a wildcard: a null leaf does not match a present value"
+    },
+    {
+      "id": "eq-nested-value-vs-null-violation",
+      "constraint": {
+        "op": "==",
+        "value": {"k": "x"}
+      },
+      "observed": {"k": null},
+      "expect": "violation",
+      "note": "same asymmetric case the other way around: a present value does not match a null leaf"
+    },
+    {
+      "id": "eq-list-null-identical-sat",
+      "constraint": {
+        "op": "==",
+        "value": [1, null, "a"]
+      },
+      "observed": [1, null, "a"],
+      "expect": "satisfied",
+      "note": "a null element in an otherwise identical list still compares equal"
+    },
+    {
+      "id": "eq-list-null-mismatch-violation",
+      "constraint": {
+        "op": "==",
+        "value": [1, null]
+      },
+      "observed": [1, 2],
+      "expect": "violation",
+      "note": "a null element does not match a present value at the same position"
+    }
+  ]
+}

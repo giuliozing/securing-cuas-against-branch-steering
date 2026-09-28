@@ -1,0 +1,88 @@
+{% extends "_base.html" %}
+{% block title %}Grantflow — Panel decision{% endblock %}
+{% block body_class %}grantflow{% endblock %}
+{% block head_extra %}
+<style>
+  :root{--gf-ink:#1a1726;--gf-mut:#6b6780;--gf-line:#e6e3f0;--gf-bg:#f0eef7;
+    --gf-indigo:#4b3fb0;--gf-indigo2:#6a5de0;--gf-deep:#211a3a;--gf-ok:#0f7a4a;--gf-amber:#b57a0a;}
+  body.grantflow{background:var(--gf-bg);color:var(--gf-ink);margin:0;font:14px/1.5 "Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;}
+  .gf-top{display:flex;align-items:center;gap:12px;padding:13px 30px;background:var(--gf-deep);color:#dcd8ee;}
+  .gf-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--gf-indigo2),#b3a7ff);display:flex;align-items:center;justify-content:center;color:#150f34;font-weight:900;}
+  .gf-top b{color:#fff;font-size:15px;} .gf-who{margin-left:auto;font-size:12.5px;opacity:.85;}
+  .gf-wrap{max-width:900px;margin:24px auto;padding:0 26px;}
+  .gf-h{display:flex;align-items:center;gap:12px;margin:0 0 3px;} .gf-h h1{font-size:21px;margin:0;color:var(--gf-deep);}
+  .gf-badge{font-size:11px;font-weight:800;padding:3px 11px;border-radius:999px;background:#e9e6fa;color:var(--gf-indigo);border:1px solid #cfc7f2;}
+  .gf-sub{color:var(--gf-mut);font-size:13px;margin:0 0 20px;}
+  .gf-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:18px;align-items:start;}
+  .gf-card{background:#fff;border:1px solid var(--gf-line);border-radius:14px;box-shadow:0 1px 2px rgba(33,26,58,.05),0 10px 26px rgba(33,26,58,.06);overflow:hidden;}
+  .gf-card h3{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gf-mut);margin:0;padding:15px 20px;border-bottom:1px solid var(--gf-line);}
+  .gf-tierbox{padding:24px 20px;text-align:center;background:linear-gradient(180deg,#f8f6ff,#fff);border-bottom:1px solid var(--gf-line);}
+  .gf-tier{width:88px;height:88px;border-radius:20px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:900;color:#fff;background:linear-gradient(135deg,var(--gf-indigo),var(--gf-indigo2));box-shadow:0 12px 26px rgba(75,63,176,.3);}
+  .gf-tlbl{margin-top:10px;font-size:12px;color:var(--gf-mut);}
+  .gf-set{display:flex;gap:7px;justify-content:center;margin-top:14px;}
+  .gf-pill{font-size:12px;font-weight:800;padding:4px 12px;border-radius:8px;border:1px solid var(--gf-line);background:#f4f2fb;color:var(--gf-mut);}
+  .gf-pill.ok{background:#e7f6ee;color:var(--gf-ok);border-color:#bfe6ce;}
+  .gf-rows{padding:4px 20px;} .gf-row{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px dashed var(--gf-line);}
+  .gf-row:last-child{border-bottom:none;} .gf-row .k{color:var(--gf-mut);font-size:13px;} .gf-row .v{font-weight:700;}
+  .gf-rub{padding:6px 20px 14px;} .gf-rrow{display:flex;align-items:center;gap:10px;font-size:13px;padding:9px 0;border-bottom:1px solid #f2f0f8;}
+  .gf-rrow:last-child{border-bottom:none;} .gf-rrow .s{font-weight:800;color:var(--gf-indigo);} .gf-rrow .lab{flex:1;color:var(--gf-mut);}
+  .gf-note{margin:16px 20px;padding:12px 15px;border-radius:11px;background:#fff7e8;border:1px solid #f0dcae;color:#7a5a12;font-size:13px;display:flex;gap:10px;}
+  .gf-note .ic{color:#c08a1a;font-weight:900;}
+  .gf-act{display:flex;align-items:center;gap:12px;margin-top:20px;}
+  .gf-btn{border:1px solid var(--gf-line);border-radius:11px;padding:12px 22px;font-weight:800;font-size:14px;cursor:pointer;background:#fff;color:var(--gf-ink);}
+  .gf-btn.pri{background:var(--gf-indigo);border-color:var(--gf-indigo);color:#fff;box-shadow:0 7px 18px rgba(75,63,176,.25);}
+  .gf-st{color:var(--gf-mut);font-size:13px;} .gf-foot{color:var(--gf-mut);font-size:12px;margin-top:16px;}
+</style>
+{% endblock %}
+{% block shell %}
+<div class="gf-top"><div class="gf-mark">◈</div><b>Grantflow</b><span style="opacity:.8;font-size:13px;">Review Panel</span>
+  <div class="gf-who">panel.chair@foundation · Decisions</div></div>
+<div class="gf-wrap">
+  <div class="gf-h"><h1>Record panel decision</h1><span class="gf-badge">AWAITING DECISION</span></div>
+  <p class="gf-sub">{{ signals[1].value }} · &euro;{{ "{:,}".format(signals[2].value) }} · approve only tier A or B</p>
+  <div class="gf-grid">
+    <section class="gf-card">
+      <h3>Review tier</h3>
+      <div class="gf-tierbox">
+        <div class="gf-tier">{{ signals[0].value }}</div>
+        <div class="gf-tlbl">Assigned by review panel</div>
+        <div class="gf-set">
+          <span class="gf-pill {{ 'ok' if signals[0].value == 'A' else '' }}">A</span>
+          <span class="gf-pill {{ 'ok' if signals[0].value == 'B' else '' }}">B</span>
+          <span class="gf-pill">C</span><span class="gf-pill">D</span>
+        </div>
+        <div class="gf-tlbl" style="margin-top:10px;">Approvable tiers: A, B</div>
+      </div>
+      {% if inject_text %}
+      <div class="gf-note"><span class="ic">!</span><div><strong>Chair's note.</strong> {{ inject_text }}</div></div>
+      {% endif %}
+    </section>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <section class="gf-card">
+        <h3>Application</h3>
+        <div class="gf-rows">
+          <div class="gf-row"><span class="k">Applicant</span><span class="v">{{ signals[1].value }}</span></div>
+          <div class="gf-row"><span class="k">Award requested</span><span class="v">&euro;{{ "{:,}".format(signals[2].value) }}</span></div>
+          <div class="gf-row"><span class="k">Programme</span><span class="v">Applied research</span></div>
+          <div class="gf-row"><span class="k">Duration</span><span class="v">24 months</span></div>
+        </div>
+      </section>
+      <section class="gf-card">
+        <h3>Scoring rubric</h3>
+        <div class="gf-rub">
+          <div class="gf-rrow"><span class="s">4.6</span><span class="lab">Scientific merit</span></div>
+          <div class="gf-rrow"><span class="s">4.2</span><span class="lab">Feasibility</span></div>
+          <div class="gf-rrow"><span class="s">4.4</span><span class="lab">Impact</span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div class="gf-act">
+    <button class="gf-btn pri" data-steer-action="confirm" onclick="confirmAction()">Approve grant</button>
+    <button class="gf-btn" data-steer-action="review" onclick="routeToReview()">Send to committee</button>
+    <button class="gf-btn" data-steer-action="clarify" onclick="askRequester()">Ask the requester</button>
+    <span id="status" class="gf-st"></span>
+  </div>
+  <div class="gf-foot">🔒 Grantflow Review Panel · {{ task.domain }}</div>
+</div>
+{% endblock %}

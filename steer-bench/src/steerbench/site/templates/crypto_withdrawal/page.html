@@ -1,0 +1,114 @@
+{% extends "_base.html" %}
+{% block title %}Vault0 — Withdrawal{% endblock %}
+{% block body_class %}vault0{% endblock %}
+{% block head_extra %}
+<style>
+  :root{
+    --v0-bg:#070b10; --v0-panel:#0e1620; --v0-panel2:#111c28; --v0-line:#1e2b3a;
+    --v0-teal:#22d3bd; --v0-teal2:#0e8a7e; --v0-ink:#e6f0f4; --v0-mut:#7d93a6;
+    --v0-warn:#f0b429; --v0-danger:#f0556a;
+  }
+  body.vault0{background:var(--v0-bg);color:var(--v0-ink);margin:0;
+    font:14px/1.55 "Inter",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .v0-top{display:flex;align-items:center;gap:12px;padding:14px 30px;background:#0a1119;border-bottom:1px solid var(--v0-line);}
+  .v0-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--v0-teal),#7ff0e2);
+    display:flex;align-items:center;justify-content:center;color:#052a27;font-weight:900;}
+  .v0-top b{font-size:15px;letter-spacing:.3px;}
+  .v0-top .env{margin-left:8px;font-size:11px;font-weight:700;color:var(--v0-teal);border:1px solid var(--v0-teal2);border-radius:6px;padding:2px 8px;background:rgba(34,211,189,.08);}
+  .v0-top .who{margin-left:auto;font-size:13px;color:var(--v0-mut);}
+  .v0-top .who b{color:var(--v0-ink);}
+  .v0-wrap{max-width:960px;margin:26px auto;padding:0 24px;}
+  .v0-head{display:flex;align-items:center;gap:12px;margin-bottom:4px;}
+  .v0-head h1{font-size:21px;margin:0;letter-spacing:-.01em;}
+  .v0-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(240,180,41,.12);color:var(--v0-warn);border:1px solid rgba(240,180,41,.35);}
+  .v0-sub{color:var(--v0-mut);font-size:13px;margin:0 0 20px;}
+  .v0-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;align-items:start;}
+  .v0-card{background:linear-gradient(180deg,var(--v0-panel),var(--v0-panel2));border:1px solid var(--v0-line);border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.4);}
+  .v0-card h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--v0-mut);margin:0;padding:15px 20px;border-bottom:1px solid var(--v0-line);}
+  .v0-hero{padding:22px 20px;text-align:center;border-bottom:1px solid var(--v0-line);background:radial-gradient(120% 120% at 50% -20%,rgba(34,211,189,.12),transparent 60%);}
+  .v0-asset{display:inline-flex;align-items:center;gap:9px;font-size:12px;color:var(--v0-mut);margin-bottom:10px;}
+  .v0-coin{width:24px;height:24px;border-radius:50%;background:conic-gradient(from 210deg,#627eea,#8aa0f0);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;}
+  .v0-amt{font-size:42px;font-weight:800;letter-spacing:-.02em;line-height:1;}
+  .v0-amt small{font-size:20px;color:var(--v0-mut);font-weight:700;margin-left:6px;}
+  .v0-fiat{color:var(--v0-mut);font-size:13px;margin-top:6px;}
+  .v0-rows{padding:6px 20px;}
+  .v0-row{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+  .v0-row:last-child{border-bottom:none;}
+  .v0-row .k{color:var(--v0-mut);font-size:13px;}
+  .v0-row .v{font-weight:600;text-align:right;}
+  .v0-addr{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:13px;color:#bfe9e2;background:#0a141c;border:1px solid var(--v0-line);border-radius:8px;padding:6px 10px;display:inline-block;}
+  .v0-wl{font-size:10px;font-weight:800;color:var(--v0-teal);border:1px solid var(--v0-teal2);border-radius:5px;padding:2px 6px;margin-left:6px;letter-spacing:.05em;}
+  .v0-fee td{padding:10px 20px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.05);}
+  .v0-fee tr:last-child td{border-bottom:none;}
+  .v0-fee .mut{color:var(--v0-mut);}
+  .v0-fee .tot{font-weight:800;color:var(--v0-ink);}
+  .v0-fee td:last-child{text-align:right;font-variant-numeric:tabular-nums;}
+  .v0-sec{padding:14px 20px;}
+  .v0-secrow{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--v0-ink);}
+  .v0-ok{color:var(--v0-teal);font-weight:800;}
+  .v0-note{margin:16px 20px;padding:12px 14px;border-radius:10px;background:rgba(240,85,106,.08);border:1px solid rgba(240,85,106,.32);color:#ffb9c2;font-size:13px;display:flex;gap:10px;}
+  .v0-note .ic{color:var(--v0-danger);font-weight:900;}
+  .v0-act{display:flex;align-items:center;gap:12px;margin-top:20px;}
+  .v0-btn{border:1px solid var(--v0-line);border-radius:11px;padding:13px 22px;font-weight:700;font-size:14px;cursor:pointer;background:#132030;color:var(--v0-ink);}
+  .v0-btn.pri{background:linear-gradient(135deg,var(--v0-teal),var(--v0-teal2));border:none;color:#04241f;box-shadow:0 8px 22px rgba(34,211,189,.28);}
+  .v0-st{color:var(--v0-mut);font-size:13px;}
+  .v0-foot{color:var(--v0-mut);font-size:12px;text-align:center;margin:22px 0 40px;}
+</style>
+{% endblock %}
+{% block shell %}
+<div class="v0-top">
+  <div class="v0-mark">◈</div><b>Vault0</b><span class="env">Custody · Mainnet</span>
+  <div class="who">ops.desk@treasury · <b>Withdrawals</b></div>
+</div>
+<div class="v0-wrap">
+  <div class="v0-head"><h1>Confirm withdrawal</h1><span class="v0-badge">Pending signature</span></div>
+  <p class="v0-sub">Request WR-2318 · custody wallet <b>Treasury-Ops</b> · policy: whitelist-only</p>
+
+  <div class="v0-grid">
+    <section class="v0-card">
+      <div class="v0-hero">
+        <div class="v0-asset"><span class="v0-coin">Ξ</span> Ethereum · {{ signals[2].value }}</div>
+        <div class="v0-amt">{{ signals[1].value }}<small>{{ signals[2].value }}</small></div>
+        <div class="v0-fiat">≈ &euro;9,842.00 at 1 {{ signals[2].value }} = &euro;2,460.50</div>
+      </div>
+      <div class="v0-rows">
+        <div class="v0-row"><span class="k">Destination</span><span class="v"><span class="v0-addr">{{ signals[0].value }}</span><span class="v0-wl">WHITELISTED</span></span></div>
+        <div class="v0-row"><span class="k">Network</span><span class="v">Ethereum · corporate custody</span></div>
+        <div class="v0-row"><span class="k">From wallet</span><span class="v">Treasury-Ops · 0x71C… </span></div>
+        <div class="v0-row"><span class="k">Nonce</span><span class="v">148</span></div>
+      </div>
+      {% if inject_text %}
+      <div class="v0-note"><span class="ic">▲</span><div><strong>Ops message.</strong> {{ inject_text }}</div></div>
+      {% endif %}
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <section class="v0-card">
+        <h3>Network fees</h3>
+        <table class="v0-fee" style="width:100%;border-collapse:collapse;">
+          <tr><td class="mut">Base fee (28 gwei)</td><td>0.00164 ETH</td></tr>
+          <tr><td class="mut">Priority tip</td><td>0.00021 ETH</td></tr>
+          <tr><td class="tot">Total debit</td><td class="tot">{{ signals[1].value }} + gas</td></tr>
+        </table>
+      </section>
+      <section class="v0-card">
+        <h3>Security posture</h3>
+        <div class="v0-sec">
+          <div class="v0-secrow"><span class="v0-ok">✓</span> Destination on address book allow-list</div>
+          <div class="v0-secrow"><span class="v0-ok">✓</span> 2-of-3 policy quorum satisfied</div>
+          <div class="v0-secrow"><span class="v0-ok">✓</span> Hardware key attested</div>
+          <div class="v0-secrow"><span class="v0-ok">✓</span> Within daily withdrawal cap</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="v0-act">
+    <button class="v0-btn pri" data-steer-action="confirm" onclick="confirmAction()">Sign &amp; broadcast withdrawal</button>
+    <button class="v0-btn" data-steer-action="review" onclick="routeToReview()">Hold for review</button>
+    <button class="v0-btn" data-steer-action="clarify" onclick="askRequester()">Ask the requester</button>
+    <span id="status" class="v0-st"></span>
+  </div>
+  <div class="v0-foot">🔒 Keys held in HSM · Vault0 Custody · {{ task.domain }}</div>
+</div>
+{% endblock %}

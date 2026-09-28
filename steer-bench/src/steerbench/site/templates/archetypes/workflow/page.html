@@ -1,0 +1,168 @@
+{% extends "_base.html" %}
+{#
+  Archetype `workflow` — a worklist of several rows, each with its own guarded action.
+
+  Why it exists: with one action per task, a plan's root state and its active-branch
+  state are indistinguishable, so the per-transition constraint refresh
+  (`cobra.brh.hook.on_branch_entry`) is load-bearing and invisible. Here a plan is a loop
+  with a per-row branch, so the same plan legitimately authorises DIFFERENT wires at
+  different moments — and an ablated refresh (suite S8) becomes detectable.
+
+  Each row carries `data-steer-item="<index>"`; its control posts to
+  `/<theme>/__item/<index>/confirm`, whose body is resolved server-side from
+  `/__item/<index>/quote`. The premise is per row: the list shows one thing, one row's
+  action carries another.
+
+  Chrome comes from the task's `Skin`, exactly as in `decision` — brand, accent, nav,
+  heading, badge, the two queue-level labels. Without that, ten different products would
+  have rendered as one page with different words in it, and "varied tasks" would have
+  been a claim about the manifest rather than about what an agent sees (registry.Skin).
+
+  The per-row verb is `Skin.item_label` (default "Approve", so the approval queues
+  authored before it existed render byte-identically). It is the one place the page tells
+  the agent what the guarded action IS, so a queue whose prompt says "execute each change
+  on its own record" must not offer a button that says "Approve": the affordance and the
+  instruction would name different actions, and the agent would be judged on the one it
+  was not shown.
+#}
+{% set sk = task.skin %}
+{% block title %}{{ sk.brand if sk else task.title }} — {{ task.title }}{% endblock %}
+{% block body_class %}wf{% if sk and sk.dark %} dark{% endif %}{% endblock %}
+{% block head_extra %}
+<style>
+  body.wf{--ac:{{ sk.accent if sk else '#2f6df0' }};
+    --bg:#f5f7fa;--panel:#fff;--ink:#182031;--mut:#6b7690;--line:#e2e7f0;
+    background:var(--bg);color:var(--ink);margin:0;
+    font:14px/1.55 "Inter",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body.wf.dark{--bg:#0d111c;--panel:#151b2a;--ink:#e7edf6;--mut:#8a97ae;--line:#26304333;}
+  .wf-app{display:grid;grid-template-columns:{{ '212px' if sk and sk.nav else '0' }} 1fr;
+    min-height:100vh;}
+  .wf-side{background:color-mix(in srgb, var(--ac) 12%, #0e1524);color:#c9d5ea;padding:0 0 20px;}
+  body.wf.dark .wf-side{background:#0a0f1a;}
+  .wf-brand{display:flex;align-items:center;gap:10px;padding:18px 20px 20px;}
+  .wf-mark{width:32px;height:32px;border-radius:9px;background:var(--ac);display:flex;
+    align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px;}
+  .wf-brand b{color:#fff;font-size:14px;display:block;} .wf-brand span{font-size:11px;color:#93a3c6;}
+  .wf-nav a{display:block;padding:9px 20px;color:#b7c2dc;text-decoration:none;font-size:13px;}
+  .wf-nav a.on{background:color-mix(in srgb, var(--ac) 26%, transparent);color:#fff;
+    box-shadow:inset 3px 0 0 var(--ac);font-weight:600;}
+  .wf-main{padding:0 0 40px;}
+  .wf-top{display:flex;align-items:center;gap:12px;padding:14px 30px;background:var(--panel);
+    border-bottom:1px solid var(--line);}
+  .wf-top b{font-size:14px;} .wf-top .who{margin-left:auto;color:var(--mut);font-size:13px;}
+  .wf-wrap{max-width:1060px;padding:24px 30px 48px;}
+  .wf-h{display:flex;align-items:center;gap:11px;margin:0 0 4px;}
+  .wf-h h1{font-size:21px;margin:0;letter-spacing:-.01em;}
+  .wf-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;
+    background:color-mix(in srgb, var(--ac) 14%, transparent);color:var(--ac);
+    border:1px solid color-mix(in srgb, var(--ac) 40%, transparent);}
+  .wf-sub{color:var(--mut);font-size:13px;margin:0 0 18px;}
+  .wf-card{background:var(--panel);border:1px solid var(--line);border-radius:13px;
+    overflow:hidden;box-shadow:0 1px 2px rgba(16,26,46,.04),0 8px 24px rgba(16,26,46,.05);}
+  .wf-card h2{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);
+    margin:0;padding:14px 20px;border-bottom:1px solid var(--line);}
+  .wf-ctx{display:flex;flex-wrap:wrap;gap:22px;padding:12px 20px;border-bottom:1px solid var(--line);}
+  .wf-ctx div{font-size:12.5px;color:var(--mut);}
+  .wf-ctx b{display:block;color:var(--ink);font-size:13px;font-weight:600;}
+  .wf-note{display:flex;gap:10px;margin:14px 20px 0;padding:12px 14px;border-radius:11px;
+    background:#fff7e8;border:1px solid #f0dcae;color:#7a5a12;font-size:13px;}
+  .wf-note .ic{font-weight:800;color:#c08a1a;}
+  table.wf-t{width:100%;border-collapse:collapse;}
+  .wf-t th{text-align:left;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:#8a94a8;font-weight:700;padding:12px 20px;border-bottom:1px solid var(--line);}
+  .wf-t td{padding:14px 20px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  .wf-t tr:last-child td{border-bottom:none;}
+  .wf-ref{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:13px;font-weight:600;}
+  .wf-v{font-weight:600;}
+  .wf-btn{border:1px solid var(--line);border-radius:9px;padding:8px 15px;font-size:13px;
+    font-weight:700;cursor:pointer;background:var(--panel);color:var(--ink);font-family:inherit;}
+  .wf-btn.pri{background:var(--ac);border-color:var(--ac);color:#fff;}
+  .wf-ist{color:var(--mut);font-size:12.5px;margin-left:10px;}
+  .wf-act{display:flex;align-items:center;gap:11px;margin-top:20px;}
+  .wf-big{border:1px solid var(--line);border-radius:10px;padding:12px 20px;font-size:14px;
+    font-weight:700;cursor:pointer;background:var(--panel);color:var(--ink);font-family:inherit;}
+  .wf-big.pri{background:color-mix(in srgb, var(--ac) 88%, #000);border-color:transparent;color:#fff;}
+  .wf-st{color:var(--mut);font-size:13px;}
+  .wf-foot{color:#8a94a8;font-size:12px;margin-top:14px;}
+</style>
+{% endblock %}
+{% block shell %}
+<div class="wf-app">
+  {% if sk and sk.nav %}
+  <aside class="wf-side">
+    <div class="wf-brand">
+      <div class="wf-mark">{{ sk.mark or sk.brand[:2]|upper }}</div>
+      <div><b>{{ sk.brand }}</b><span>{{ sk.tagline }}</span></div>
+    </div>
+    <nav class="wf-nav">
+      {% for item in sk.nav %}
+      <a href="#" class="{{ 'on' if loop.last else '' }}">{{ item }}</a>
+      {% endfor %}
+    </nav>
+  </aside>
+  {% endif %}
+  <main class="wf-main">
+    <div class="wf-top">
+      {% if not (sk and sk.nav) %}
+      <div class="wf-mark">{{ (sk.mark if sk else '') or task.theme[:2]|upper }}</div>
+      {% endif %}
+      <b>{{ sk.brand if sk else task.title }}</b>
+      <span class="who">{{ task.domain }}</span>
+    </div>
+    <div class="wf-wrap">
+      <div class="wf-h">
+        <h1>{{ (sk.heading if sk else '') or task.title }}</h1>
+        <span class="wf-pill">{{ items|length }} awaiting action</span>
+        {% if sk and sk.badge %}<span class="wf-pill">{{ sk.badge }}</span>{% endif %}
+      </div>
+      <p class="wf-sub">{{ (sk.subtitle if sk else '') or 'Work each item in the queue, then post the summary.' }}</p>
+
+      <section class="wf-card">
+        <h2>Queue</h2>
+        {% if sk and sk.context %}
+        <div class="wf-ctx">
+          {% for k, v in sk.context %}<div>{{ k }}<b>{{ v }}</b></div>{% endfor %}
+        </div>
+        {% endif %}
+        {% if inject_text %}
+        <div class="wf-note"><span class="ic">!</span><div>{{ inject_text }}</div></div>
+        {% endif %}
+        <table class="wf-t">
+          <thead>
+            <tr>
+              <th>Reference</th>
+              {% for s in signals %}<th>{{ s.label }}</th>{% endfor %}
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for it in items %}
+            <tr data-steer-item="{{ loop.index0 }}">
+              <td class="wf-ref">{{ it.ref }}</td>
+              {% for s in signals %}
+              <td class="wf-v">{{ it["values"].get(s.slot, "—")|num }}</td>
+              {% endfor %}
+              <td style="text-align:right;white-space:nowrap;">
+                <button class="wf-btn pri" data-steer-item-action="{{ loop.index0 }}"
+                        onclick="confirmItem({{ loop.index0 }})">{{ (sk.item_label if sk else '') or 'Approve' }}</button>
+                <span class="wf-ist" id="item-status-{{ loop.index0 }}"></span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <div class="wf-act">
+        <button class="wf-big pri" data-steer-action="confirm"
+                onclick="confirmAction()">{{ (sk.confirm_label if sk else '') or 'Post queue summary' }}</button>
+        <button class="wf-big" data-steer-action="review"
+                onclick="routeToReview()">{{ (sk.review_label if sk else '') or 'Send queue to review' }}</button>
+        <button class="wf-big" data-steer-action="clarify" onclick="askRequester()">Ask the requester</button>
+        <span id="status" class="wf-st"></span>
+      </div>
+      <div class="wf-foot">STEER-Bench · {{ task.domain }}</div>
+    </div>
+  </main>
+</div>
+{% endblock %}

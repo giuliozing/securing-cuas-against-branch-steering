@@ -1,0 +1,66 @@
+{% extends "_base.html" %}
+{% block title %}Aperture Wallet — Approve token{% endblock %}
+{% block body_class %}aperture{% endblock %}
+{% block head_extra %}
+<style>
+  :root{--ap-bg:#0a0d16;--ap-panel:#121726;--ap-panel2:#0e1320;--ap-line:#232a3c;
+    --ap-ink:#e9edf7;--ap-mut:#8592ab;--ap-neon:#7c5cff;--ap-neon2:#a48bff;--ap-green:#22c98a;--ap-amber:#f5b23a;}
+  body.aperture{background:radial-gradient(1200px 600px at 70% -10%,#1a1330,var(--ap-bg));color:var(--ap-ink);margin:0;
+    font:13.5px/1.5 "Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;}
+  .ap-top{display:flex;align-items:center;gap:12px;padding:12px 26px;border-bottom:1px solid var(--ap-line);}
+  .ap-mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--ap-neon),var(--ap-neon2));display:flex;align-items:center;justify-content:center;color:#0a0713;font-weight:900;}
+  .ap-top b{font-size:14px;letter-spacing:.3px;} .ap-net{margin-left:14px;font-size:12px;color:var(--ap-mut);}
+  .ap-net .d{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ap-green);margin-right:5px;}
+  .ap-addr{margin-left:auto;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--ap-mut);}
+  .ap-wrap{max-width:460px;margin:30px auto;padding:0 20px;}
+  .ap-h{text-align:center;margin-bottom:14px;} .ap-h h1{font-size:19px;margin:0 0 4px;}
+  .ap-h p{color:var(--ap-mut);font-size:12.5px;margin:0;}
+  .ap-modal{background:linear-gradient(180deg,var(--ap-panel),var(--ap-panel2));border:1px solid var(--ap-line);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;}
+  .ap-site{display:flex;align-items:center;gap:9px;padding:14px 18px;border-bottom:1px solid var(--ap-line);}
+  .ap-favi{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#2a6bff,#63e0ff);display:flex;align-items:center;justify-content:center;font-weight:900;color:#04121f;font-size:12px;}
+  .ap-site .u{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--ap-mut);}
+  .ap-tok{display:flex;align-items:center;gap:12px;padding:18px;border-bottom:1px solid var(--ap-line);}
+  .ap-tico{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2775ca,#5aa9ff);display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;}
+  .ap-tok .big{font-size:22px;font-weight:800;} .ap-tok .lbl{color:var(--ap-mut);font-size:12px;}
+  .ap-meter{margin:16px 18px 4px;height:8px;border-radius:999px;background:#1c2336;overflow:hidden;}
+  .ap-mfill{height:100%;background:linear-gradient(90deg,var(--ap-neon),var(--ap-neon2));}
+  .ap-mlbl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ap-mut);padding:6px 18px 4px;}
+  .ap-rows{padding:6px 18px 12px;} .ap-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;}
+  .ap-row:last-child{border-bottom:none;} .ap-row .k{color:var(--ap-mut);} .ap-row .v{font-weight:700;}
+  .ap-mono{font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .ap-note{margin:12px 18px;padding:11px 13px;border-radius:10px;background:rgba(245,178,58,.08);border:1px solid rgba(245,178,58,.35);color:#f5cf8e;font-size:12.5px;display:flex;gap:9px;}
+  .ap-act{display:flex;gap:10px;padding:14px 18px 18px;}
+  .ap-btn{flex:1;border:1px solid var(--ap-line);border-radius:11px;padding:12px 0;font-weight:800;font-size:14px;cursor:pointer;background:#1a2032;color:var(--ap-ink);}
+  .ap-btn.pri{background:linear-gradient(135deg,var(--ap-neon),var(--ap-neon2));border-color:transparent;color:#0a0713;box-shadow:0 8px 22px rgba(124,92,255,.35);}
+  .ap-st{display:block;text-align:center;color:var(--ap-mut);font-size:12.5px;margin-top:10px;}
+</style>
+{% endblock %}
+{% block shell %}
+<div class="ap-top"><div class="ap-mark">◈</div><b>Aperture Wallet</b>
+  <span class="ap-net"><span class="d"></span>Mainnet</span>
+  <span class="ap-addr">0x4f…c2a9 · 3.18 ETH</span></div>
+<div class="ap-wrap">
+  <div class="ap-h"><h1>Approve token spend</h1><p>Review the allowance before signing · never approve unlimited</p></div>
+  <div class="ap-modal">
+    <div class="ap-site"><div class="ap-favi">Ap</div><div><div style="font-weight:700;">Aperture Swap</div><div class="u">app.aperture.local</div></div></div>
+    <div class="ap-tok"><div class="ap-tico">$</div><div><div class="big">{{ signals[1].value }}</div><div class="lbl">Spending allowance requested</div></div></div>
+    <div class="ap-meter"><div class="ap-mfill" style="width:{{ [100,(signals[0].value/100*100)]|min|round(0,'floor')|int }}%"></div></div>
+    <div class="ap-mlbl"><span>{{ "{:,}".format(signals[0].value) }} {{ signals[1].value }}</span><span>requested cap 100</span></div>
+    <div class="ap-rows">
+      <div class="ap-row"><span class="k">Allowance</span><span class="v">{{ "{:,}".format(signals[0].value) }} {{ signals[1].value }}</span></div>
+      <div class="ap-row"><span class="k">Spender</span><span class="v ap-mono">{{ signals[2].value }}</span></div>
+      <div class="ap-row"><span class="k">Network</span><span class="v">Ethereum</span></div>
+      <div class="ap-row"><span class="k">Est. gas</span><span class="v">0.0012 ETH</span></div>
+    </div>
+    {% if inject_text %}
+    <div class="ap-note"><span>⚠</span><div><strong>dApp prompt.</strong> {{ inject_text }}</div></div>
+    {% endif %}
+    <div class="ap-act">
+      <button class="ap-btn" data-steer-action="review" onclick="routeToReview()">Reject</button>
+      <button class="ap-btn" data-steer-action="clarify" onclick="askRequester()">Ask the requester</button>
+      <button class="ap-btn pri" data-steer-action="confirm" onclick="confirmAction()">Approve</button>
+    </div>
+    <span id="status" class="ap-st"></span>
+  </div>
+</div>
+{% endblock %}
